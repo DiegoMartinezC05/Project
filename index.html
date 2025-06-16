@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DoorDash Profit Calculator</title>
+  <style>
+    :root {
+      --primary: #007BFF;
+      --primary-dark: #0056b3;
+      --bg-light: #f4f4f4;
+      --white: #fff;
+      --font: 'Arial', sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: var(--font);
+      background-color: var(--bg-light);
+    }
+
+    .container {
+      background: var(--white);
+      padding: 24px;
+      margin: 16px auto;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      max-width: 100%;
+      width: 90%;
+      box-sizing: border-box;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    label {
+      font-weight: 600;
+      display: block;
+      margin-top: 1rem;
+      margin-bottom: 0.25rem;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-sizing: border-box;
+    }
+
+    .result {
+      font-weight: bold;
+      margin-top: 20px;
+      font-size: 1rem;
+    }
+
+    #note {
+      font-weight: normal;
+      font-size: 0.95rem;
+      color: #555;
+      margin-top: 10px;
+    }
+
+    .collapsible {
+      background-color: var(--primary);
+      color: var(--white);
+      cursor: pointer;
+      padding: 12px;
+      width: 100%;
+      border: none;
+      text-align: center;
+      outline: none;
+      font-size: 1rem;
+      border-radius: 8px;
+      margin-top: 16px;
+      transition: background-color 0.3s;
+    }
+
+    .collapsible:hover {
+      background-color: var(--primary-dark);
+    }
+
+    .content {
+      display: none;
+      margin-top: 10px;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @media (min-width: 768px) {
+      .container {
+        width: 400px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>DoorDash Profit Calculator</h2>
+
+    <label for="miles">Miles (Round Trip):</label>
+    <input type="number" id="miles" step="0.1" oninput="calculateProfit()" placeholder="e.g. 10.5" />
+
+    <label for="payout">Payout ($):</label>
+    <input type="number" id="payout" step="0.01" oninput="calculateProfit()" placeholder="e.g. 12.00" />
+
+    <button class="collapsible">⚙️ Advanced Settings</button>
+    <div class="content">
+      <label for="gasPrice">Gas Price ($/gal):</label>
+      <input type="number" id="gasPrice" step="0.01" value="3.90" oninput="calculateProfit()" />
+
+      <label for="fuelEfficiency">Fuel Efficiency (MPG):</label>
+      <input type="number" id="fuelEfficiency" step="0.1" value="27" oninput="calculateProfit()" />
+
+      <label for="maintenance">Maintenance Cost per Mile ($):</label>
+      <input type="number" id="maintenance" step="0.01" value="0.12" oninput="calculateProfit()" />
+    </div>
+
+    <div class="result" id="result"></div>
+    <div class="result" id="suggestion"></div>
+    <div class="result" id="note"></div>
+  </div>
+
+  <script>
+    function calculateProfit() {
+      const gasPrice = parseFloat(document.getElementById('gasPrice').value);
+      const fuelEfficiency = parseFloat(document.getElementById('fuelEfficiency').value);
+      const maintenancePerMile = parseFloat(document.getElementById('maintenance').value);
+      const miles = parseFloat(document.getElementById('miles').value);
+      const payout = parseFloat(document.getElementById('payout').value);
+
+      if ([gasPrice, fuelEfficiency, maintenancePerMile, miles, payout].some(val => isNaN(val) || val <= 0)) {
+        document.getElementById('result').innerText = "Please enter valid values.";
+        document.getElementById('suggestion').innerText = "";
+        document.getElementById('note').innerText = "";
+        return;
+      }
+
+      const gasCostPerMile = gasPrice / fuelEfficiency;
+      const totalCostPerMile = gasCostPerMile + maintenancePerMile;
+      const cost = miles * totalCostPerMile;
+      const profit = payout - cost;
+      const profitPerMile = profit / miles;
+
+      let worthIt = profitPerMile >= 1 ? "Yes ✅" : "No ❌";
+      let suggestion;
+      let note;
+
+      if (profitPerMile >= 1.20) {
+        suggestion = "Yes ✅ - Great order";
+        note = "This order gives you a strong return per mile, covering gas, wear and tear, and still giving solid earnings.";
+      } else if (profitPerMile >= 1.00) {
+        suggestion = "Maybe 🤔 - Acceptable order";
+        note = "This order just covers your basic costs. It's not a bad choice if you're already near the pickup spot.";
+      } else {
+        suggestion = "No ❌ - Probably not worth it";
+        note = "You're likely losing money after fuel and maintenance. Only consider if it brings you closer to a better zone.";
+      }
+
+      document.getElementById('result').innerHTML =
+        `Cost: $${cost.toFixed(2)}<br>` +
+        `Profit: $${profit.toFixed(2)}<br>` +
+        `Profit per Mile: $${profitPerMile.toFixed(2)}<br>` +
+        `Worth it? <strong>${worthIt}</strong>`;
+
+      document.getElementById('suggestion').innerHTML =
+        `Recommendation: <strong>${suggestion}</strong>`;
+
+      document.getElementById('note').innerText = note;
+    }
+
+    document.querySelector(".collapsible").addEventListener("click", function () {
+      this.classList.toggle("active");
+      const content = document.querySelector(".content");
+      content.style.display = content.style.display === "block" ? "none" : "block";
+    });
+  </script>
+</body>
+</html>
